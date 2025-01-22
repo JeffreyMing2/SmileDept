@@ -1,50 +1,59 @@
 import { defineStore } from 'pinia'
-import type { LoginResponse } from '@/types'
-import { UserRole } from '@/types/permission'
+import { ref, computed } from 'vue'
+import type { UserRole } from '@/types/permission'
+import type { LoginRequest, LoginResponse } from '@/types'
+import { login as loginApi } from '@/api/auth'
 
-interface UserState {
-  token: string | null
-  username: string
-  nickname: string
-  avatar: string
-  role: UserRole
-}
+export const useUserStore = defineStore('user', () => {
+  const token = ref(localStorage.getItem('token') || '')
+  const username = ref('')
+  const nickname = ref('')
+  const avatar = ref('')
+  const role = ref<UserRole | ''>('')
 
-export const useUserStore = defineStore('user', {
-  state: (): UserState => ({
-    token: localStorage.getItem('token'),
-    username: '',
-    nickname: '',
-    avatar: '',
-    role: UserRole.MEMBER
-  }),
+  const isLoggedIn = computed(() => !!token.value)
+  const isOwner = computed(() => role.value === 'OWNER')
+  const isAdmin = computed(() => role.value === 'ADMIN')
+  const isVolunteer = computed(() => role.value === 'VOLUNTEER')
+  const isMember = computed(() => role.value === 'MEMBER')
 
-  getters: {
-    isOwner: (state) => state.role === UserRole.OWNER,
-    isAdmin: (state) => state.role === UserRole.ADMIN,
-    isVolunteer: (state) => state.role === UserRole.VOLUNTEER,
-    isMember: (state) => state.role === UserRole.MEMBER
-  },
+  async function login(loginForm: LoginRequest) {
+    const response = await loginApi(loginForm)
+    setUserInfo(response)
+    return response
+  }
 
-  actions: {
-    setUserInfo(userInfo: LoginResponse & { role: UserRole }) {
-      this.token = userInfo.token
-      this.username = userInfo.username
-      this.nickname = userInfo.nickname
-      this.avatar = userInfo.avatar
-      this.role = userInfo.role
+  function setUserInfo(data: LoginResponse) {
+    token.value = data.token
+    username.value = data.username
+    nickname.value = data.nickname
+    avatar.value = data.avatar
+    role.value = data.role
+    localStorage.setItem('token', data.token)
+  }
 
-      localStorage.setItem('token', userInfo.token)
-    },
+  function logout() {
+    token.value = ''
+    username.value = ''
+    nickname.value = ''
+    avatar.value = ''
+    role.value = ''
+    localStorage.removeItem('token')
+  }
 
-    logout() {
-      this.token = null
-      this.username = ''
-      this.nickname = ''
-      this.avatar = ''
-      this.role = UserRole.MEMBER
-
-      localStorage.removeItem('token')
-    }
+  return {
+    token,
+    username,
+    nickname,
+    avatar,
+    role,
+    isLoggedIn,
+    isOwner,
+    isAdmin,
+    isVolunteer,
+    isMember,
+    login,
+    setUserInfo,
+    logout
   }
 })

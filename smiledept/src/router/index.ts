@@ -1,35 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
-import Login from '@/views/Login.vue'
-import Layout from '@/layout/index.vue'
-
-const routes: RouteRecordRaw[] = [
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login,
-    meta: {
-      title: '登录',
-      requiresAuth: false
-    }
-  },
-  {
-    path: '/',
-    component: Layout,
-    redirect: '/dashboard',
-    children: [
-      {
-        path: 'dashboard',
-        name: 'Dashboard',
-        component: () => import('@/views/dashboard/index.vue'),
-        meta: {
-          title: '首页',
-          requiresAuth: true
-        }
-      }
-    ]
-  }
-]
+import type { RouteLocationNormalized } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import { routes } from './routes'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -37,16 +9,46 @@ const router = createRouter({
 })
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-
-  if (to.meta.requiresAuth && !token) {
-    next('/login')
-  } else if (to.path === '/login' && token) {
-    next('/')
-  } else {
-    next()
+router.beforeEach(async (to: RouteLocationNormalized, from: RouteLocationNormalized, next) => {
+  const userStore = useUserStore()
+  const title = to.meta.title as string
+  if (title) {
+    document.title = `${title} - ${import.meta.env.VITE_APP_TITLE}`
   }
+
+  // 访问根路径时重定向到 /dashboard
+  if (to.path === '/') {
+    next('/dashboard')
+    return
+  }
+
+  // 不需要登录的页面
+  if (!to.meta.requiresAuth) {
+    if (to.path === '/login' && userStore.isLoggedIn) {
+      next('/')
+    } else {
+      next()
+    }
+    return
+  }
+
+  // 需要登录但未登录
+  if (!userStore.isLoggedIn) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
+    return
+  }
+
+  // 需要特定角色
+  const roles = to.meta.roles as string[] | undefined
+  if (roles && !roles.includes(userStore.role)) {
+    next('/404')
+    return
+  }
+
+  next()
 })
 
 export default router

@@ -1,10 +1,22 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from './components/HelloWorld.vue'
+import { onMounted } from 'vue'
+import { useAppStore } from '@/stores/app'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+
+const appStore = useAppStore()
+
+onMounted(() => {
+  // 应用主题
+  document.documentElement.setAttribute('data-theme', appStore.theme)
+})
 </script>
 
 <template>
-  <router-view />
+  <el-config-provider :locale="zhCn">
+    <router-view />
+  </el-config-provider>
 </template>
 
 <style>

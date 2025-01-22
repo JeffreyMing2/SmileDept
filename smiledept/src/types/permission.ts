@@ -13,3 +13,13 @@ export interface MenuItem {
   roles: UserRole[]
   children?: MenuItem[]
 }
+
+export interface PermissionMeta {
+  title: string
+  requiresAuth: boolean
+  roles?: UserRole[]
+}
+
+declare module 'vue-router' {
+  interface RouteMeta extends PermissionMeta {}
+}
