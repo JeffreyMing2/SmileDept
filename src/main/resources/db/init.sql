@@ -1,1 +1,126 @@
- 
+-- 创建数据库
+CREATE DATABASE IF NOT EXISTS smile_dept DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE smile_dept;
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+    password VARCHAR(100) NOT NULL COMMENT '密码',
+    nickname VARCHAR(50) COMMENT '昵称',
+    avatar VARCHAR(255) COMMENT '头像URL',
+    role VARCHAR(20) NOT NULL COMMENT '角色: OWNER/ADMIN/VOLUNTEER/MEMBER',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT '用户表';
+
+-- 部门表
+CREATE TABLE IF NOT EXISTS departments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL COMMENT '部门名称',
+    description TEXT COMMENT '部门描述',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) COMMENT '部门表';
+
+-- 职位表
+CREATE TABLE IF NOT EXISTS positions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL COMMENT '职位名称',
+    department_id BIGINT NOT NULL COMMENT '所属部门ID',
+    description TEXT COMMENT '职位描述',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (department_id) REFERENCES departments(id)
+) COMMENT '职位表';
+
+-- 成员表
+CREATE TABLE IF NOT EXISTS members (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '用户ID',
+    department_id BIGINT NOT NULL COMMENT '部门ID',
+    position_id BIGINT NOT NULL COMMENT '职位ID',
+    join_date DATE NOT NULL COMMENT '加入日期',
+    status VARCHAR(20) NOT NULL COMMENT '状态: ACTIVE/INACTIVE',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (department_id) REFERENCES departments(id),
+    FOREIGN KEY (position_id) REFERENCES positions(id)
+) COMMENT '成员表';
+
+-- 招募表
+CREATE TABLE IF NOT EXISTS recruitments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    department_id BIGINT NOT NULL COMMENT '部门ID',
+    position_id BIGINT NOT NULL COMMENT '职位ID',
+    title VARCHAR(100) NOT NULL COMMENT '招募标题',
+    description TEXT NOT NULL COMMENT '招募描述',
+    requirements TEXT COMMENT '要求',
+    status VARCHAR(20) NOT NULL COMMENT '状态: OPEN/CLOSED',
+    start_date DATE NOT NULL COMMENT '开始日期',
+    end_date DATE NOT NULL COMMENT '结束日期',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (department_id) REFERENCES departments(id),
+    FOREIGN KEY (position_id) REFERENCES positions(id)
+) COMMENT '招募表';
+
+-- 招募申请表
+CREATE TABLE IF NOT EXISTS recruitment_applications (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    recruitment_id BIGINT NOT NULL COMMENT '招募ID',
+    user_id BIGINT NOT NULL COMMENT '申请人ID',
+    status VARCHAR(20) NOT NULL COMMENT '状态: PENDING/APPROVED/REJECTED',
+    apply_reason TEXT NOT NULL COMMENT '申请理由',
+    review_comment TEXT COMMENT '审核意见',
+    reviewed_by BIGINT COMMENT '审核人ID',
+    reviewed_at DATETIME COMMENT '审核时间',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (recruitment_id) REFERENCES recruitments(id),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (reviewed_by) REFERENCES users(id)
+) COMMENT '招募申请表';
+
+-- 处罚记录表
+CREATE TABLE IF NOT EXISTS punishments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '被处罚人ID',
+    type VARCHAR(20) NOT NULL COMMENT '类型: ADMIN/MEMBER/VOLUNTEER',
+    reason TEXT NOT NULL COMMENT '处罚原因',
+    punishment TEXT NOT NULL COMMENT '处罚内容',
+    start_date DATE NOT NULL COMMENT '开始日期',
+    end_date DATE COMMENT '结束日期',
+    status VARCHAR(20) NOT NULL COMMENT '状态: ACTIVE/COMPLETED/CANCELLED',
+    registered_by BIGINT NOT NULL COMMENT '登记人ID',
+    approved_by BIGINT COMMENT '审批人ID',
+    approved_at DATETIME COMMENT '审批时间',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (registered_by) REFERENCES users(id),
+    FOREIGN KEY (approved_by) REFERENCES users(id)
+) COMMENT '处罚记录表';
+
+-- 下载资源表
+CREATE TABLE IF NOT EXISTS downloads (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100) NOT NULL COMMENT '资源标题',
+    description TEXT COMMENT '资源描述',
+    file_url VARCHAR(255) NOT NULL COMMENT '文件URL',
+    file_size BIGINT NOT NULL COMMENT '文件大小(字节)',
+    download_count INT NOT NULL DEFAULT 0 COMMENT '下载次数',
+    category VARCHAR(50) NOT NULL COMMENT '分类',
+    visible_to JSON NOT NULL COMMENT '可见角色: ["OWNER", "ADMIN", ...]',
+    uploaded_by BIGINT NOT NULL COMMENT '上传人ID',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (uploaded_by) REFERENCES users(id)
+) COMMENT '下载资源表';
+
+-- 初始化群主账号
+INSERT INTO users (username, password, nickname, role) VALUES 
+('admin', '$2a$10$rTxFfUWY8hzT2RgzXvMQpemxqV4.QsU0/4wvRty8SyXTF0zXuSmHi', '群主', 'OWNER');
+-- 密码为: admin123 
