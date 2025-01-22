@@ -1,0 +1,39 @@
+plugins {
+    id 'org.springframework.boot' version '3.0.2'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'java'
+}
+
+group = 'com.mxs'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+        implementation 'org.springframework.boot:spring-boot-security'
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
+        runtimeOnly 'org.springframework.boot:spring-boot-devtools'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        implementation 'io.jsonwebtoken:jjwt:0.9.1'
+        implementation 'org.apache.commons:commons-lang3'
+        implementation 'com.google.guava:guava:30.1-jre'
+        implementation 'org.springframework.social:spring-social-core'
+        implementation 'org.springframework.social:spring-social-config'
+        implementation 'org.springframework.social:spring-social-web'
+        implementation 'org.springframework.social:spring-social-wechat'
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
